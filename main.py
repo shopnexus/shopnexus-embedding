@@ -1,6 +1,10 @@
+import os
 import logging
+import torch
+torch.set_num_threads(os.cpu_count())
 from flask import Flask, request, jsonify
-from pymilvus.model.hybrid import BGEM3EmbeddingFunction
+# from pymilvus.model.hybrid import BGEM3EmbeddingFunction as EmbeddingFunction
+from pymilvus.model.hybrid import MGTEEmbeddingFunction as EmbeddingFunction
 
 import transformers.utils.import_utils as _import_utils
 if not hasattr(_import_utils, "is_torch_fx_available"):
@@ -10,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-ef = BGEM3EmbeddingFunction(use_fp16=False, device="cpu")
+ef = EmbeddingFunction(use_fp16=False, device="cpu")
 
 
 def sparse_to_dict(sparse_matrix):
@@ -24,6 +28,7 @@ def embed():
     texts = data.get("texts")
     if not texts or not isinstance(texts, list):
         return jsonify({"error": "Missing or invalid 'texts' field. Expected a list of strings."}), 400
+
 
     try:
         result = ef.encode_documents(texts)
